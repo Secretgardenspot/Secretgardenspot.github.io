@@ -1,0 +1,257 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Pixel Gift for Kai</title>
+  <link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap" rel="stylesheet">
+  
+  <style>
+    /* --- RETRO PURPLE THEME --- */
+    body {
+      font-family: 'Press Start 2P', cursive;
+      margin: 0;
+      padding: 0;
+      background-color: #f3ebff;
+      /* Dotted grid background */
+      background-image: radial-gradient(#b39ddb 2px, transparent 2px);
+      background-size: 20px 20px;
+      color: #2e003e;
+      text-align: center;
+    }
+
+    header {
+      background: #4a148c; /* Deep Purple */
+      color: #fff;
+      padding: 40px 20px;
+      border-bottom: 6px solid #000;
+      margin-bottom: 40px;
+      box-shadow: 0 10px 0 rgba(0,0,0,0.2);
+    }
+
+    h1 {
+      font-size: 1.2rem;
+      line-height: 1.5;
+      text-shadow: 4px 4px 0 #000;
+    }
+
+    /* The "Cartridge" Card */
+    .card {
+      background: #ffffff;
+      border: 6px solid #000;
+      padding: 30px;
+      margin: 0 auto 50px auto;
+      max-width: 450px;
+      box-shadow: 15px 15px 0px #7c43bd; /* Purple shadow */
+      position: relative;
+    }
+
+    .image-border {
+      border: 4px solid #000;
+      background: #6a1b9a;
+      padding: 8px;
+      margin-bottom: 25px;
+    }
+
+    .sunflower-gif {
+      width: 100%;
+      display: block;
+      image-rendering: pixelated; 
+    }
+
+    /* Green "Press Start" Button */
+    button {
+      background: #00e676; 
+      border: 4px solid #000;
+      padding: 20px;
+      font-family: 'Press Start 2P', cursive;
+      font-size: 0.9rem;
+      color: #000;
+      cursor: pointer;
+      box-shadow: 6px 6px 0px #000;
+      width: 100%;
+      text-transform: uppercase;
+      transition: transform 0.1s, box-shadow 0.1s;
+    }
+
+    button:hover {
+      background: #00c853;
+      transform: translate(2px, 2px);
+      box-shadow: 4px 4px 0px #000;
+    }
+
+    button:active {
+      transform: translate(6px, 6px);
+      box-shadow: 0px 0px 0px #000;
+    }
+
+    footer {
+      color: #7e57c2;
+      font-size: 0.6rem;
+      padding-bottom: 30px;
+    }
+  </style>
+</head>
+<body>
+  
+  <header>
+    <h1>🌻 ITEM ACQUIRED! 🌻</h1>
+    <p>SPECIAL GIFT FOR KAI</p>
+  </header>
+
+  <main>
+    <section class="card">
+      <div class="image-border">
+        <img src="https://media.giphy.com/media/3o7abldj0b3rxrZUxW/giphy.gif" alt="Sunflower" class="sunflower-gif">
+      </div>
+      <p style="font-size: 0.7rem; margin-bottom: 20px; color: #555;">[RARITY: LEGENDARY]</p>
+      <button id="downloadCertificate">PRINT CERTIFICATE</button>
+    </section>
+  </main>
+
+  <footer>
+    <p>GENERATED WITH LOVE & PIXELS</p>
+  </footer>
+
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+
+  <script>
+    document.getElementById("downloadCertificate").addEventListener("click", function() {
+      const { jsPDF } = window.jspdf;
+      const doc = new jsPDF();
+
+      // --- 1. BACKGROUND TEXTURE (Dots) ---
+      doc.setFillColor(243, 235, 255); // Very light lavender
+      doc.rect(0, 0, 210, 297, "F"); // Fill background
+
+      // Draw faint dots pattern
+      doc.setFillColor(209, 196, 233);
+      for(let x=10; x<200; x+=10) {
+        for(let y=10; y<290; y+=10) {
+          doc.rect(x, y, 1, 1, "F");
+        }
+      }
+
+      // --- 2. DECORATIVE FRAME ---
+      const purple = [74, 20, 140];
+      doc.setDrawColor(purple[0], purple[1], purple[2]);
+      
+      // Main border
+      doc.setLineWidth(4);
+      doc.rect(10, 10, 190, 277);
+
+      // Inner thin border
+      doc.setLineWidth(1);
+      doc.rect(15, 15, 180, 267);
+
+      // "Pixel Corners" (L-Shapes)
+      doc.setFillColor(purple[0], purple[1], purple[2]);
+      const cSize = 10; 
+      // Top Left
+      doc.rect(10, 10, cSize, 4, "F"); doc.rect(10, 10, 4, cSize, "F");
+      // Top Right
+      doc.rect(200-cSize, 10, cSize, 4, "F"); doc.rect(196, 10, 4, cSize, "F");
+      // Bottom Left
+      doc.rect(10, 287-4, cSize, 4, "F"); doc.rect(10, 287-cSize, 4, cSize, "F");
+      // Bottom Right
+      doc.rect(200-cSize, 287-4, cSize, 4, "F"); doc.rect(196, 287-cSize, 4, cSize, "F");
+
+
+      // --- 3. HIGH-RES PIXEL SUNFLOWER ---
+      // 19x19 Grid
+      const p = 4; // Pixel Size
+      const startX = 105 - ((19*p)/2); // Center horizontally
+      const startY = 80;
+
+      const c = {
+        _: null,          // Transparent
+        y: [255, 215, 0], // Gold/Yellow
+        o: [255, 140, 0], // Dark Orange (Shading)
+        b: [101, 67, 33], // Dark Brown (Center)
+        L: [139, 69, 19], // Light Brown (Center highlights)
+        g: [50, 205, 50], // Green (Stem)
+        d: [0, 100, 0]    // Dark Green (Leaves shadow)
+      };
+
+      // The Map
+      const art = [
+        ['_','_','_','_','y','_','y','y','y','_','y','_','_','_','_','_','_','_','_'],
+        ['_','_','y','y','o','y','o','o','o','y','o','y','y','_','_','_','_','_','_'],
+        ['_','y','o','o','y','o','o','y','o','o','y','o','o','y','_','_','_','_','_'],
+        ['_','y','o','y','b','b','b','b','b','b','b','y','o','y','_','_','_','_','_'],
+        ['y','o','y','b','b','L','L','b','L','L','b','b','y','o','y','_','_','_','_'],
+        ['y','o','y','b','L','b','b','b','b','b','L','b','y','o','y','_','_','_','_'],
+        ['y','o','y','b','L','b','b','b','b','b','L','b','y','o','y','_','_','_','_'],
+        ['_','y','o','y','b','b','L','L','L','b','b','y','o','y','_','_','_','_','_'],
+        ['_','y','o','o','y','b','b','b','b','b','y','o','o','y','_','_','_','_','_'],
+        ['_','_','y','y','o','y','o','o','o','y','o','y','y','_','_','_','_','_','_'],
+        ['_','_','_','_','y','_','y','y','y','_','y','_','_','_','_','_','_','_','_'],
+        ['_','_','_','_','_','_','_','g','_','_','_','_','_','_','_','_','_','_','_'],
+        ['_','_','_','_','_','_','g','g','g','_','_','_','_','_','d','_','_','_','_'],
+        ['_','_','_','d','d','_','g','g','g','_','_','_','d','d','g','d','_','_','_'],
+        ['_','_','d','g','g','d','_','g','_','_','_','d','g','g','g','g','d','_','_'],
+        ['_','_','_','d','g','g','g','g','_','_','d','g','g','g','d','d','_','_','_'],
+        ['_','_','_','_','d','d','d','g','_','_','_','d','d','d','_','_','_','_','_'],
+        ['_','_','_','_','_','_','_','g','_','_','_','_','_','_','_','_','_','_','_'],
+        ['_','_','_','_','_','_','_','g','_','_','_','_','_','_','_','_','_','_','_']
+      ];
+
+      // Render Map
+      art.forEach((row, r) => {
+        row.forEach((pixel, cIdx) => {
+          if (pixel && pixel !== '_') {
+            const rgb = c[pixel];
+            doc.setFillColor(rgb[0], rgb[1], rgb[2]);
+            doc.rect(startX + (cIdx*p), startY + (r*p), p, p, "F");
+          }
+        });
+      });
+
+
+      // --- 4. TEXT CONTENT ---
+      
+      // Title
+      doc.setFont("courier", "bold");
+      doc.setTextColor(74, 20, 140); 
+      doc.setFontSize(24);
+      doc.text(":: CERTIFICATE OF RADIANCE ::", 105, 50, { align: "center" });
+
+      // Recipient Label
+      doc.setFontSize(12);
+      doc.setTextColor(0, 0, 0);
+      doc.text("AWARDED TO PLAYER:", 105, 175, { align: "center" });
+
+      // RECIPIENT NAME (KAI)
+      doc.setFontSize(30);
+      doc.setTextColor(74, 20, 140);
+      doc.text("- KAI -", 105, 190, { align: "center" });
+
+      // Message Box
+      doc.setDrawColor(0);
+      doc.setLineWidth(0.5);
+      doc.setFillColor(255, 255, 255);
+      doc.rect(30, 205, 150, 35, "FD"); // White box with border
+
+      // Message Text
+      doc.setFont("courier", "bolditalic");
+      doc.setFontSize(14);
+      doc.setTextColor(0);
+      doc.text("A special Sunflower to the person who", 105, 218, { align: "center" });
+      doc.text("brings sunshine to everyday life.", 105, 228, { align: "center" });
+
+      // Footer / Sign-off
+      doc.setFont("courier", "normal");
+      doc.setFontSize(12);
+      doc.text("With Love & Pixels,", 105, 260, { align: "center" });
+      
+      // Date
+      const date = new Date().toLocaleDateString();
+      doc.setFontSize(10);
+      doc.setTextColor(100);
+      doc.text("[" + date + "]", 105, 270, { align: "center" });
+
+      doc.save("Sunflower_Certificate_Kai.pdf");
+    });
+  </script>
+</body>
+</html>
