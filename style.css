@@ -137,6 +137,13 @@
     flex-direction: column;
     gap: 8px;
   }
+.brand-link {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  text-decoration: none;
+  color: inherit;
+}
   
   .nav-item {
     display: flex;
