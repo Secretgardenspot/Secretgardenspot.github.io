@@ -1,0 +1,598 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<title>Collection</title>
+<style>
+  :root{
+    --bg-1:#07021a;
+    --bg-2:#2a0f3a;
+    --accent-1:#d6c3ff;
+    --accent-2:#8a5bff;
+    --accent-3:#efe6ff;
+    --muted:#e6ddff;
+    --pixel:6px;
+    --control-bottom:56px;
+  }
+
+  html,body{height:100%;margin:0;background:
+    radial-gradient(900px 420px at 12% 12%, rgba(138,91,255,0.08), transparent 10%),
+    linear-gradient(180deg,var(--bg-1),var(--bg-2));
+    font-family: "Courier New", Courier, monospace;
+    color:var(--muted);
+    display:flex;align-items:center;justify-content:center;padding:18px;
+  }
+
+  .card{
+    width:980px;max-width:96vw;border-radius:12px;padding:18px;
+    background:linear-gradient(180deg, rgba(255,255,255,0.02), rgba(255,255,255,0.01));
+    border:4px solid rgba(138,91,255,0.12);
+    box-shadow:0 20px 60px rgba(6,4,20,0.6);
+    display:flex;flex-direction:column;gap:12px;position:relative;overflow:hidden;
+  }
+
+  .titlebar{display:flex;align-items:center;gap:12px;padding:6px 10px;border-radius:8px;background:rgba(255,255,255,0.02);color:var(--accent-3);font-weight:700}
+  .title{font-size:1.4rem;margin:0;text-align:center;color:var(--accent-3);font-weight:800;cursor:pointer;text-decoration:none}
+
+  .stage{
+    position:relative;height:520px;border-radius:10px;overflow:hidden;
+    display:flex;align-items:center;justify-content:center;
+    background:repeating-linear-gradient(45deg, rgba(255,255,255,0.01) 0 8px, transparent 8px 16px);
+  }
+
+  #pixelCanvas{
+    image-rendering: pixelated;
+    width:560px;height:380px;border:6px solid rgba(138,91,255,0.12);
+    border-radius:8px;background:linear-gradient(180deg,#12041a 0%, #2b0f3a 100%);
+    box-shadow:0 12px 30px rgba(16,6,40,0.6);
+  }
+
+  .caption{position:absolute;top:18px;left:28px;color:var(--accent-3);font-weight:700}
+  .sub{position:absolute;top:44px;left:28px;color:rgba(223,210,255,0.85);font-size:.92rem}
+
+  .envelope-wrap{position:absolute;left:50%;top:48%;transform:translate(-50%,-10%);pointer-events:none;z-index:10}
+  .envelope{
+    width:300px;height:180px;background:linear-gradient(180deg,#fff8ff,#fff3ff);
+    border:4px solid rgba(138,91,255,0.12);border-radius:6px;position:relative;overflow:visible;
+    box-shadow:0 18px 40px rgba(6,4,20,0.5);transform-origin:center;
+  }
+  .flap{
+    position:absolute;left:0;right:0;top:-48px;height:96px;background:linear-gradient(180deg,#e6d6ff,#d9c6ff);
+    transform-origin:center top;border-radius:6px;border:4px solid rgba(138,91,255,0.06);
+    display:flex;align-items:flex-end;justify-content:center;padding-bottom:8px;font-weight:900;color:#fff;
+  }
+  .seal{
+    position:absolute;left:50%;transform:translateX(-50%);bottom:-22px;width:52px;height:52px;border-radius:50%;
+    background:linear-gradient(180deg,#ff8bd6,#ff4d9e);display:flex;align-items:center;justify-content:center;color:#fff;font-weight:900;
+    box-shadow:0 8px 20px rgba(255,77,158,0.12);
+  }
+
+  .paper{
+    position:absolute;left:50%;top:50%;transform:translate(-50%,-50%) scale(0.92);
+    width:460px;max-width:86vw;height:360px;background:linear-gradient(180deg,#fff8ff,#fff3ff);
+    border:3px solid rgba(138,91,255,0.08);border-radius:8px;padding:18px;box-shadow:0 40px 100px rgba(6,4,20,0.6);
+    opacity:0;pointer-events:none;display:flex;flex-direction:column;gap:12px;z-index:30;
+  }
+  .paper.open{opacity:1;pointer-events:auto;transform:translate(-50%,-50%) scale(1);transition:transform .48s cubic-bezier(.2,.9,.3,1), opacity .36s ease;}
+
+  .paper .paper-inner{overflow:auto;padding-right:6px;font-size:0.98rem;color:#2b0f3a;line-height:1.5;background:transparent}
+  .paper .paper-title{font-weight:900;color:var(--accent-2);font-size:1.05rem;margin-bottom:8px;}
+
+  .paper-date{
+    position:absolute;right:14px;top:12px;color:rgba(138,91,255,0.55);font-size:0.78rem;font-weight:700;letter-spacing:0.6px;
+  }
+
+  .line{opacity:0;transform:translateY(10px);transition:opacity .36s ease, transform .36s cubic-bezier(.2,.9,.3,1);margin-bottom:12px;}
+  .line.show{opacity:1;transform:translateY(0)}
+
+  .controls{
+    position:absolute;left:50%;bottom:var(--control-bottom);transform:translateX(-50%);display:flex;gap:12px;z-index:40;
+    transition:opacity .22s ease, transform .22s ease;
+  }
+  .controls.hidden{opacity:0;pointer-events:none;transform:translateX(-50%) translateY(6px);}
+
+  .pixel-btn{
+    --w:120px;width:var(--w);height:48px;display:inline-flex;align-items:center;justify-content:center;cursor:pointer;
+    user-select:none;font-weight:900;font-family: "Courier New", Courier, monospace;letter-spacing:1px;text-transform:uppercase;color:#fff;
+    position:relative;image-rendering:pixelated;box-shadow:0 8px 0 rgba(0,0,0,0.28), inset 0 -4px 0 rgba(0,0,0,0.06);border:0;outline:0;transform:translateZ(0);
+    border-radius:6px;
+  }
+  .pixel-btn::before{content:"";position:absolute;inset:0;border-radius:6px;background:linear-gradient(180deg,var(--accent-1),var(--accent-2));z-index:-2}
+  .pixel-btn::after{content:"";position:absolute;left:6px;top:6px;right:6px;bottom:6px;border-radius:4px;background:transparent;box-shadow:0 0 0 2px rgba(0,0,0,0.06) inset,0 0 0 6px rgba(0,0,0,0.02) inset;z-index:-1}
+
+  .btn-yes{background:linear-gradient(180deg,var(--accent-1),var(--accent-2));color:#fff}
+  .btn-no{background:linear-gradient(180deg,#1b0b2b,#2b0f3a);color:var(--accent-3);border:2px solid rgba(138,91,255,0.06)}
+
+  .pixel-btn:active{ transform: translateY(3px) scale(.995); box-shadow: 0 4px 0 rgba(0,0,0,0.25); }
+
+  .pixel-next{--w:96px;width:var(--w);height:40px;display:inline-flex;align-items:center;justify-content:center;cursor:pointer;font-weight:800;font-family: "Courier New", Courier, monospace;background:linear-gradient(180deg,var(--accent-1),var(--accent-2));color:#fff;border-radius:6px;border:0;box-shadow:0 8px 0 rgba(0,0,0,0.18);}
+
+  #status{
+    position:absolute;left:50%;bottom:calc(var(--control-bottom) + 64px);transform:translateX(-50%);z-index:60;background:rgba(255,255,255,0.04);
+    color:var(--accent-3);padding:8px 12px;border-radius:8px;font-weight:700;min-width:220px;text-align:center;pointer-events:none;box-shadow:0 8px 20px rgba(6,4,20,0.45);backdrop-filter: blur(4px);
+    opacity:0;transition:opacity .18s ease;
+  }
+  #status.show{opacity:1}
+
+  .hint{
+    position:absolute;left:50%;bottom:12px;transform:translateX(-50%);z-index:20;color:rgba(223,210,255,0.95);text-align:center;margin:6px 0;padding:6px 12px;border-radius:8px;background:rgba(0,0,0,0.04);
+    font-size:0.95rem;pointer-events:none;
+  }
+
+  .page-turn {
+    transform-origin: left center;
+    animation: pageTurn .48s cubic-bezier(.2,.9,.3,1);
+  }
+  @keyframes pageTurn {
+    0% { transform: translate(-50%,-50%) rotateY(0deg) scale(1); opacity:1; }
+    50% { transform: translate(-50%,-50%) rotateY(20deg) scale(.98); opacity:.6; }
+    100% { transform: translate(-50%,-50%) rotateY(0deg) scale(1); opacity:1; }
+  }
+
+  @media (max-width:820px){
+    #pixelCanvas{width:420px;height:300px}
+    .stage{height:460px}
+    .paper{width:320px;height:300px}
+    .envelope{width:240px;height:140px}
+    .pixel-btn{--w:96px;height:44px}
+    :root{--control-bottom:86px}
+    #status{bottom:calc(var(--control-bottom) + 64px)}
+    .hint{bottom:8px;padding:8px 12px;font-size:0.92rem}
+  }
+
+  @media (prefers-reduced-motion:reduce){
+    .paper, .envelope, .page-turn { transition:none; animation:none; }
+    *{transition:none}
+  }
+</style>
+</head>
+<body>
+  <main class="card" role="main" aria-labelledby="mainTitle">
+    <div class="titlebar">
+      <div style="width:10px;height:10px;border-radius:2px;background:var(--accent-1);box-shadow:0 0 8px rgba(138,91,255,0.18)"></div>
+      <a id="titleLink" class="title" href="secret.html" aria-label="Open secret page">Secret</a>
+    </div>
+
+    <section class="stage" aria-label="Pixel stage">
+      <canvas id="pixelCanvas" width="140" height="95" aria-hidden="true"></canvas>
+
+      <div class="caption">Do you love me?</div>
+      <div class="sub">A collection of my words and love to her</div>
+
+      <div class="envelope-wrap" id="envelopeWrap" aria-hidden="true">
+        <div class="envelope" id="envelope">
+          <div class="flap" id="flap">❤</div>
+          <div class="seal">❤</div>
+        </div>
+      </div>
+
+      <div class="paper" id="paper" role="dialog" aria-labelledby="paperTitle" aria-hidden="true">
+        <div class="paper-date" id="paperDate">9/2/2026</div>
+        <div class="paper-inner">
+          <div class="paper-title" id="paperTitle">A letter for you</div>
+          <div id="letterLines" aria-live="polite"></div>
+        </div>
+        <div style="display:flex;justify-content:space-between;gap:8px;align-items:center">
+          <div style="display:flex;gap:8px">
+            <button id="prevBtn" class="pixel-next" style="display:none">Prev</button>
+            <button id="nextBtn" class="pixel-next" style="display:none">Next</button>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <div class="controls" id="controls" role="group" aria-label="Answer controls">
+      <button id="yesBtn" class="pixel-btn btn-yes" aria-label="Yes">YES</button>
+      <button id="noBtn" class="pixel-btn btn-no" aria-label="No">NO</button>
+    </div>
+
+    <div class="hint" id="hint">Hover NO to see it dodge • Tap YES to open the letter</div>
+    <div id="status" role="status" aria-live="polite"></div>
+  </main>
+
+<script>
+(() => {
+  const canvas = document.getElementById('pixelCanvas');
+  const ctx = canvas.getContext('2d');
+  const yesBtn = document.getElementById('yesBtn');
+  const noBtn = document.getElementById('noBtn');
+  const status = document.getElementById('status');
+  const envelope = document.getElementById('envelope');
+  const flap = document.getElementById('flap');
+  const paper = document.getElementById('paper');
+  const letterLines = document.getElementById('letterLines');
+  const nextBtn = document.getElementById('nextBtn');
+  const prevBtn = document.getElementById('prevBtn');
+  const paperDate = document.getElementById('paperDate');
+  const envelopeWrap = document.getElementById('envelopeWrap');
+  const card = document.querySelector('.card');
+  const controls = document.getElementById('controls');
+  const hint = document.getElementById('hint');
+
+  const W = canvas.width, H = canvas.height;
+
+  const palette = {
+    bg1: '#1a0522',
+    bg2: '#2b0f3a',
+    paper: '#fff3ff',
+    seal: '#ff4d9e',
+    accent1: '#d6c3ff',
+    accent2: '#8a5bff',
+    dark: '#2b0f3a'
+  };
+
+  function px(x,y,color){ ctx.fillStyle = color; ctx.fillRect(x,y,1,1); }
+  function drawBackground(){
+    for(let y=0;y<H;y++){
+      const t = y/H;
+      const r = Math.round(26 + (43-26)*t);
+      const g = Math.round(5 + (15-5)*t);
+      const b = Math.round(34 + (58-34)*t);
+      ctx.fillStyle = `rgb(${r},${g},${b})`;
+      ctx.fillRect(0,y,W,1);
+    }
+  }
+  function drawEnvelopePixel(){
+    const ex = 30, ey = 20, ew = 80, eh = 48;
+    for(let y=0;y<eh;y++) for(let x=0;x<ew;x++) px(ex+x,ey+y,palette.paper);
+    for(let x=0;x<ew;x++){ px(ex+x,ey,palette.accent2); px(ex+x,ey+eh-1,palette.accent2); }
+    for(let y=0;y<eh;y++){ px(ex,ey+y,palette.accent2); px(ex+ew-1,ey+y,palette.accent2); }
+    const mid = ex + Math.floor(ew/2);
+    for(let i=0;i<Math.floor(eh/2);i++){
+      const start = ex + Math.floor(i * (ew/(eh/2)));
+      const end = ex + ew - 1 - Math.floor(i * (ew/(eh/2)));
+      for(let x=start;x<=end;x++) px(x, ey + i, palette.accent1);
+    }
+    const hx = mid - 3, hy = ey + Math.floor(eh/2) - 2;
+    const heart = [
+      " 11 11 ",
+      "1111111",
+      "1111111",
+      " 11111 ",
+      "  111  ",
+      "   1   "
+    ];
+    for(let y=0;y<heart.length;y++){
+      for(let x=0;x<heart[y].length;x++){
+        if(heart[y][x] === '1') px(hx + x, hy + y, palette.seal);
+      }
+    }
+  }
+  function drawCat(){
+    const cx = 12, cy = 38;
+    const cat = [
+      "....11....",
+      "...1111...",
+      "..111111..",
+      ".11111111.",
+      ".11111111.",
+      ".11101110.",
+      "..111111..",
+      "...1111...",
+      "....11...."
+    ];
+    for(let y=0;y<cat.length;y++){
+      for(let x=0;x<cat[y].length;x++){
+        if(cat[y][x] === '1') px(cx + x, cy + y, palette.dark);
+      }
+    }
+    px(cx+12, cy+2, palette.seal);
+    px(cx+13, cy+2, palette.seal);
+    px(cx+12, cy+3, palette.seal);
+  }
+  function render(){ drawBackground(); drawEnvelopePixel(); drawCat(); }
+  render();
+
+  const letters = [
+    {
+      date: '9/2/2026',
+      title: 'A letter for you',
+      lines: [
+        "I remember when we had that argument about the confusion between us.",
+        "You told me I was nonchalant, that i didn 't seem to care at all. You were upset with me because of that, and honestly, i understood why.",
+        "At first, you were just an unexpected friend. Someone i met by chance. But somehow, without me realizing it, you became someone very special to me.",
+        "As we learned more about each other,shared our opinions, and talked about our lives, I became careful with the way I acted. I tried so hard not to give you mixed signals or encourage anything that could be misunderstood. I didn't want you to think I liked you because, at that time, i genuinely saw us as friends.",
+        "But then we started doing and saying things that I had never done with any of my other friends. Things that felt different.",
+        "That was when I got confused."
+      ]
+    },
+    {
+      date: '9/2/2026',
+      title: 'Part 2',
+      lines: [
+        "I didn't want to assume that you had feelings for me, so instead, I thought the problem was me. I thought maybe I was reading too much into things. But no matter how much I tried to ignore it, i couldn't get one question out of my head: What are we, really?",
+        "For days, I let that question sit in my mind. During those same days, we kept having conversations and arguments about the confusion between us.",
+        "The truth is, I was happy. I was happy that we talked every day. I was happy that we played together, shared ideas, talked about our days, and told each other stories from our childhood. I loved how comfortable everything felt.",
+        "But at the same time, you felt different from everyone else. We argued about things I never thought two ordinary friends would argue about.",
+        "A few weeks later, the confusion was still there. I finally told you that our conversations felt like they were going beyond friendship, and that it was confusing me. You replied that we were just friends."
+      ]
+    },
+    {
+      date: '9/2/2026',
+      title: 'Part 3',
+      lines: [
+        "I remember telling you that if I ever developed feelings for you, I would end them because I knew you didn't like it when a guy friend started liking you.",
+        "Then you said, \"I mean, if I don't like the person\" and later, \"Of course it will end\".",
+        "Maybe I was overthinking, but a small part of me took that as a hint. I thought that maybe if feelings were mutual, things wouldn't necessarily end. Maybe they would simply become something else. But that was only my own logic.",
+        "The conversation continued, and eventually you suggested removing some of the things that made us different from ordinary friends. Things like our shared playlist, our pets, matching avatars, nicknames, and the habit of talking every single day. You thought removing those things would stop the confusion.",
+        "I refused. Not because i didn't understand your point, but because none of those things felt wrong to me. What confused me wasn't the playlist or the nicknames. It was us."
+      ]
+    },
+    {
+      date: '9/2/2026',
+      title: 'Part 4',
+      lines: [
+        "So I kept asking myself: \"Why do I not want to let go of these things?\" And every time I thought about it, I realized that the problem wasn't the things we shared. It was that I didn't want to lose you.",
+        "A month before my confession, I started searching for answers on my own. I reread our conversations. Late at night, I would scroll through old messages, even our arguments. I wanted to understand what was happening between us.",
+        "I kept asking myself difficult questions: Would I really be okay if this disappeared from my life? What exactly were you to me? If I had been trying so hard to avoid falling for you, why was I still here?",
+        "Why was I focusing on our happy memories instead of our arguments? Why did I catch myself smiling whenever we talked? Why was i always waiting for your messages? Why was i excited to hear your stories? Why did i remember the smallest details about your interests? And why couldn't I stop asking what we really were?",
+        "I never found answers right away."
+      ]
+    },
+    {
+      date: '9/2/2026',
+      title: 'Part 5',
+      lines: [
+        "Instead, i decided to hide whatever feelings were growing inside me.",
+        "Then, one month later, we talked again. This time about risk, love, and infatuation. You said that if you truly loved someone, you would take the risk. I said it was more complicated than that.",
+        "To me, love wasn't only about feelings. It was also about choices and timing. Sometimes you can love someone deeply and still wonder whether being together is the right decision. The truth was simple: I was scared.",
+        "Then somehow, the conversation returned to confusion again. You were actually the one who brought it up. Earlier, i had sent you a reel that said: \"If you really like someone, being friends with them is better than dating them.\" I only sent it because my feed had been full of videos like that.",
+        "You disagreed. Instead, you sent me Ruin the Friendship song HAHAHAHAHAHHA. I laughed and said it was scary. You told me it was a choice."
+      ]
+    },
+    {
+      date: '9/2/2026',
+      title: 'Part 6',
+      lines: [
+        "Then I replied: \"Either you lose the person, or you take the risk and have a chance to keep them.\" The moment i sent those words, i think i already knew what i was going to do.",
+        "I stopped and thought about everything we had talked about before. I asked myself if i could keep pretending that everything was fine when I knew we needed clarity.",
+        "I thought about how hesitant i was. How I felt like I was fighting my own cowardice. How I was terrified that confessing might be the worst choice I could make.",
+        "I knew I wasn't good with words. I knew I wasn't good at expressing feelings. I knew I would probably just become another headache for you. But eventually, I told myself that if there was ever a moment to be honest, this was it.",
+        "So i said: \"If this is the moment where i finally have to confess, then maybe these are the words you've been looking for.\" And then I told you.",
+        "After sending that message, I walked around my room for what felt like hours. I barely slept."
+      ]
+    },
+    {
+      date: '9/2/2026',
+      title: 'Part 7',
+      lines: [
+        "I kept staring at my phone, waiting for your reply. We weren't exactly on good terms that day, so I wasn't expecting some magical reaction.",
+        "Still, finally saying it gave me relief. The feeling i had been carrying for months was finally out in the open.",
+        "But after that, a new question appeared: What happens now?",
+        "For a while, I felt like you didn't want things to go any further, so I convinced myself that I wouldn't push for more. But then you told me something I never expected. You said that you were catching feelings too. You said you wanted to clear up the confusion between us.",
+        "And for the first time, we stood on the same side of the question that had haunted me for months. So i told you that i felt the same. I told you I was looking forward to seeing where this could go, and I asked you to tell me honestly if you couldn't imagine us being together.",
+        "I always wanted to say those words face-to-face. But waiting any longer didn't feel right."
+      ]
+    },
+    {
+      date: '9/2/2026',
+      title: 'Part 8',
+      lines: [
+        "Looking back, i honestly thought i was already asking to court you. That message was supposed to be my way of asking for permission, but maybe I wasn't direct enough. Maybe i didn't know the right words to use.",
+        "What I did know was that every thought, every sleepless night, every moment of courage it took to get there was real. I had spent months questioning myself, testing my feelings, and trying to convince myself otherwise.",
+        "But no matter how much I thought about it, I always reached the same conclusion: I liked you.",
+        "Not from the moment we met. Not from some dramatic realization. But from the moment I started wondering why you felt different. From the moment i started asking what we were. From the moment I realized I couldn't imagine my days without you in them.",
+        "Because the way you treated me made me want to give you the same attention, care, and effort in return. And maybe that was my answer all along."
+      ]
+    },
+    {
+      date: '9/2/2026',
+      title: 'Part 9',
+      lines: [
+        "The confusion was never about whether i liked you. The confusion was about whether i was brave enough to admit it.",
+        "And now, when I look back at all those arguments, questions, late-night conversations, and moments of uncertainty, I don't see confusion anymore. I see two people who were slowly finding their way toward the truth.",
+        "Maybe we took the long route. Maybe we made things harder than they needed to be. But every misunderstanding, every discussion about \"what are we,\" and every moment we spent trying to figure things out led us here.",
+        "Because in the end, the answer was never hidden in our shared playlists, nicknames, matching avatars, or daily conversations. The answer was in how neither of us wanted to leave.",
+        "No matter how confused we were, no matter how many times we argued about it, we always came back to each other. And perhaps that's what love looked like before either of us was ready to call it love."
+      ]
+    },
+    {
+      date: '9/4/2026',
+      title: 'September 4, 2026',
+      lines: [
+        "I wasn’t sure if you meant it literally when you said you’ll marry someone else, or if you were just teasing me. Either way, I respect that you’re honest about your fears of marriage and childbirth. I just want you to know that when I ask, it’s because I want to understand you better, not to pressure you. I’ll take your words seriously, but I also hope you’ll reassure me when I’m being sincere."
+      ]
+    },
+    {
+      date: '12/1/2026',
+      title: 'Continuation',
+      lines: [
+        "This is the continuation placeholder. Replace with your next part of the letter when ready."
+      ]
+    }
+  ];
+
+  let currentIndex = 0;
+  let statusTimer = null;
+
+  function showStatus(text, duration = 3000){
+    clearTimeout(statusTimer);
+    status.textContent = text;
+    status.classList.add('show');
+    statusTimer = setTimeout(()=> {
+      status.classList.remove('show');
+      setTimeout(()=> { if(!paper.classList.contains('open')) status.textContent = ''; }, 180);
+    }, duration);
+  }
+
+  function dodgeNoBtn(){
+    const cardRect = card.getBoundingClientRect();
+    const yesRect = yesBtn.getBoundingClientRect();
+    const bw = noBtn.offsetWidth, bh = noBtn.offsetHeight;
+    const margin = 12;
+    const minX = cardRect.left + margin;
+    const maxX = cardRect.right - bw - margin;
+    const minY = cardRect.top + cardRect.height*0.55;
+    const maxY = cardRect.bottom - bh - margin;
+    if(maxX <= minX || maxY <= minY){
+      resetNoPosition();
+      return;
+    }
+
+    const avoidRects = [yesRect, envelope.getBoundingClientRect()];
+    if(paper.classList.contains('open')) avoidRects.push(paper.getBoundingClientRect());
+
+    let attempts = 0;
+    let relLeft, relTop;
+    while(attempts < 24){
+      const left = Math.floor(Math.random() * (maxX - minX + 1)) + minX;
+      const top = Math.floor(Math.random() * (maxY - minY + 1)) + minY;
+      const buffer = 14;
+      let overlaps = false;
+      for(const r of avoidRects){
+        if(!(left + bw + buffer < r.left || left > r.right + buffer || top + bh + buffer < r.top || top > r.bottom + buffer)){
+          overlaps = true;
+          break;
+        }
+      }
+      if(!overlaps){
+        const parent = noBtn.offsetParent || document.body;
+        const parentRect = parent.getBoundingClientRect();
+        relLeft = left - parentRect.left;
+        relTop = top - parentRect.top;
+        break;
+      }
+      attempts++;
+    }
+
+    if(relLeft === undefined){
+      const parent = noBtn.offsetParent || document.body;
+      const parentRect = parent.getBoundingClientRect();
+      relLeft = Math.min(parentRect.width - bw - margin, Math.max(margin, (parentRect.width / 2) + 80));
+      relTop = parentRect.height - bh - 24;
+    }
+
+    noBtn.style.position = 'absolute';
+    noBtn.style.left = `${Math.round(relLeft)}px`;
+    noBtn.style.top = `${Math.round(relTop)}px`;
+    noBtn.style.transform = `translateZ(0) scale(1.06)`;
+    setTimeout(()=> noBtn.style.transform = '', 260);
+    showStatus('It moved!', 1200);
+  }
+
+  noBtn.addEventListener('mouseenter', dodgeNoBtn, {passive:true});
+  noBtn.addEventListener('touchstart', (e) => { e.preventDefault(); dodgeNoBtn(); }, {passive:false});
+
+  function resetNoPosition(){
+    noBtn.style.position = '';
+    noBtn.style.left = '';
+    noBtn.style.top = '';
+  }
+  window.addEventListener('resize', () => {
+    clearTimeout(window._resetNoTimeout);
+    window._resetNoTimeout = setTimeout(resetNoPosition, 220);
+    adjustHintForMobile();
+  });
+
+  function renderLetter(index){
+    const item = letters[index];
+    paperDate.textContent = item.date;
+    document.getElementById('paperTitle').textContent = item.title || 'Letter';
+    letterLines.innerHTML = '';
+    item.lines.forEach((t, i) => {
+      const div = document.createElement('div');
+      div.className = 'line';
+      div.textContent = t;
+      letterLines.appendChild(div);
+      setTimeout(()=> div.classList.add('show'), 420 + i*420);
+    });
+  }
+
+  function hideControls(){
+    controls.classList.add('hidden');
+  }
+  function showControls(){
+    controls.classList.remove('hidden');
+  }
+
+  function openEnvelopeAndShowLetter(){
+    showStatus('Opening the letter...', 3000);
+    hideControls();
+    flap.style.transition = 'transform .6s cubic-bezier(.2,.9,.3,1), opacity .36s';
+    flap.style.transform = 'rotateX(180deg) translateY(-8px)';
+    flap.style.opacity = '0';
+    envelope.style.transition = 'transform .6s cubic-bezier(.2,.9,.3,1)';
+    envelope.style.transform = 'translateY(-20px) scale(1.02)';
+    setTimeout(()=> {
+      paper.classList.add('open');
+      paper.setAttribute('aria-hidden','false');
+      envelopeWrap.style.pointerEvents = 'none';
+      renderLetter(currentIndex);
+      prevBtn.style.display = (currentIndex > 0) ? 'inline-flex' : 'none';
+      nextBtn.style.display = (currentIndex < letters.length - 1) ? 'inline-flex' : 'none';
+    }, 420);
+  }
+
+  yesBtn.addEventListener('click', () => openEnvelopeAndShowLetter());
+
+  function pageSwitch(newIndex){
+    if(newIndex < 0 || newIndex >= letters.length) return;
+    paper.classList.remove('open');
+    paper.classList.add('page-turn');
+    paper.style.transition = 'transform .48s ease, opacity .36s ease';
+    paper.style.transform = 'translate(-50%,-50%) scale(0.96)';
+    paper.style.opacity = '0';
+    setTimeout(()=> {
+      paper.classList.remove('page-turn');
+      paper.style.transform = '';
+      paper.style.opacity = '';
+      currentIndex = newIndex;
+      renderLetter(currentIndex);
+      paper.classList.add('open');
+      prevBtn.style.display = (currentIndex > 0) ? 'inline-flex' : 'none';
+      nextBtn.style.display = (currentIndex < letters.length - 1) ? 'inline-flex' : 'none';
+    }, 420);
+  }
+
+  prevBtn.addEventListener('click', () => {
+    pageSwitch(currentIndex - 1);
+    showStatus('Showing previous entry', 3000);
+  });
+  nextBtn.addEventListener('click', () => {
+    pageSwitch(currentIndex + 1);
+    showStatus('Showing next entry', 3000);
+  });
+
+  document.addEventListener('click', (e) => {
+    if(!paper.contains(e.target) && !envelope.contains(e.target) && !yesBtn.contains(e.target) && !noBtn.contains(e.target)){
+      if(paper.classList.contains('open')){
+        paper.classList.remove('open');
+        paper.setAttribute('aria-hidden','true');
+        flap.style.transform = '';
+        flap.style.opacity = '';
+        envelope.style.transform = '';
+        status.textContent = '';
+        status.classList.remove('show');
+        prevBtn.style.display = 'none';
+        nextBtn.style.display = 'none';
+        resetNoPosition();
+        showControls();
+      }
+    }
+  });
+
+  yesBtn.addEventListener('keydown', (e) => {
+    if(e.key === 'Enter' || e.key === ' ') { e.preventDefault(); yesBtn.click(); }
+  });
+  noBtn.addEventListener('keydown', (e) => {
+    if(e.key === 'Enter' || e.key === ' ') { e.preventDefault(); dodgeNoBtn(); }
+  });
+
+  envelope.style.transition = 'transform .9s ease-in-out';
+  setTimeout(()=> envelope.style.transform = 'translateY(-6px)', 600);
+  setTimeout(()=> envelope.style.transform = '', 1400);
+
+  function adjustHintForMobile(){
+    if(window.innerWidth <= 420){
+      hint.textContent = 'Tap NO to make it move • Tap YES to open the letter';
+    } else {
+      hint.textContent = 'Hover NO to see it dodge • Tap YES to open the letter';
+    }
+  }
+  adjustHintForMobile();
+
+})();
+</script>
+</body>
+</html>
